@@ -8,8 +8,6 @@ Notes:
     - Attempts to load config from config.yaml into environment variables
         - If config.yaml does not exist, sets FIRST_RUN to "True" (Application needs to handle fist setup)
     - Configures terminal to use color coded output if possible
-
-    - Requires: PyYAML, colorama
 """
 import os
 import sys
@@ -79,11 +77,24 @@ def setup():
     logger = steup_temp_logger()
     logger.info("Starting setup")
     base_path, exe_path = get_paths()
+    if base_path == exe_path:
+        logger.info("Running in non-bundled mode")
+        os.environ["BUNDLED"] = "False"
+    else:
+        logger.info("Running in bundled mode")
+        os.environ["BUNDLED"] = "True"
+
     os.environ["BASE_PATH"] = base_path
     os.environ["EXE_PATH"] = exe_path
 
+    if os.environ.get("BUNDLED") == "True":
+        os.environ["CONFIG_PATH"] = os.path.join(exe_path, "config.yaml")
+    else:
+        os.environ["CONFIG_PATH"] = os.path.join(
+            os.path.dirname(base_path), "config.yaml")
+
     loaded = load_config(
-        os.path.join(exe_path + "/config.yaml"),
+        os.environ.get("CONFIG_PATH"),
         logger=logger)
 
     if not loaded and os.environ.get("FIRST_RUN") != "True":
